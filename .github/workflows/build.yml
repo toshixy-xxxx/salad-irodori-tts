@@ -1,0 +1,44 @@
+name: build-salad-irodori-image
+
+# 画像側（salad-comfyui-eroge）の実績ワークフローを土台に、
+# push トリガーを追加し、ComfyUI 固有の probe ジョブを除いた形。
+# イメージ名は salad-irodori-tts で固定（リポジトリ名に依存しない）。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: <redacted>
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/salad-irodori-tts:latest
